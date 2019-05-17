@@ -132,11 +132,11 @@ void button_setup(void){
 int side_markeron=0; //Side marker is equal to zero when it is not on a side marker.
 
 void setup(){
-    timer0_init();
-    timer1_init();
+    //timer0_init();
+    //timer1_init();
     ADC_trim_init();
     button_setup();
-    sei(); //Enable interrupt service routines.
+    //sei(); //Enable interrupt service routines.
 }
 
 
@@ -152,26 +152,27 @@ int PID_average=0;
 
 // This is the function that checks to see if the robot is moving mostly in a straight line and setting the speed and PD values accordingly.
 //AVerages the last 10 PID values and checks to see if the average is near 0,if it is then we can assume that it is on a straight
-ISR(TIMER_OVF_vect){
+ISR(TIMER0_OVF_vect){
     Timer_OVF ++; //Timer overflows 500 times in a second count 12 overflows to get 0.024s
     if (Timer_OVF>12){
         Timer_OVF =0; PID_average=0;int i,x; //resets our timer count and average
          // For loop shuffles the average values down one spot in the aray to clear a spot for the new value
-    for(i=9;i>=1;i--){
-        PID_value[i] = PID_value[i-1];
-    }
-    PID_value[0]=PID; //Stores the latest PID value
-    for(x=0;x<10;x++){
-        PID_average+=PID_value[x]; //Sums the stored PID values
-    }
-    PID_average = PID_average/10; //Gets the average
-    if(PID_average>12||PID_average<-12){ //The values in this if statement set the value that the average needs to be within to say it is on a straight.
-    speed = 20; gain = 150; Kd = 50;                   //Speed and PD values if it is deemed the robot is on a corner
-    PORTB = (PORTB & 0b11111101);   //Turns the LED off if is on a corner
-    }else{
-    PORTB |=(1<<1);     //IF it is on a Straight turn the LED on.
-    speed = 32;gain = 150;Kd = 50;  //SPeeds and PD values for the straight.
-    }
+				 for(i=9;i>=1;i--){
+				 		PID_value[i] = PID_value[i-1];
+    		 }
+    		 PID_value[0]=PID; //Stores the latest PID value
+    	 	 for(x=0;x<10;x++){
+      	 		PID_average+=PID_value[x]; //Sums the stored PID values
+    		 }
+    		 PID_average = PID_average/10; //Gets the average
+    		 if(PID_average>12||PID_average<-12){ //The values in this if statement set the value that the average needs to be within to say it is on a straight.
+    	 	 		speed = 20; gain = 150; Kd = 50;                   //Speed and PD values if it is deemed the robot is on a corner
+     		 		PORTB = (PORTB & 0b11111101);   //Turns the LED off if is on a corner
+    		 }
+				 else{
+    		 		PORTB |=(1<<1);     //IF it is on a Straight turn the LED on.
+      	 		speed = 32;gain = 150;Kd = 50;  //SPeeds and PD values for the straight.
+    			}
     }
 }
 
@@ -205,7 +206,7 @@ void run_PID (){
         if(PID>speed){
             PID =speed;
         }
-        if(PID<-speed){
+        if(PID<-speed){;
             PID = -speed;
         }
             OCR0A = (speed-PID); //this drives motor 2 or the left wheel
@@ -225,10 +226,12 @@ void check_position(){
 
 void main(){
     setup();
-    _delay_ms(3000);
+		DDRB |= (1<<2);
     int corner_count = 0;
     while(1){
-        check_position();
-        run_PID();
-        }
+        //check_position();
+        //run_PID();
+				PORTB ^= (1<<2);
+				_delay_ms(500);
+    }
 }
