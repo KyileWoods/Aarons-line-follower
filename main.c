@@ -137,6 +137,9 @@ void setup(){
     ADC_trim_init();
     button_setup();
     sei(); //Enable interrupt service routines.
+
+		DDRB |= (1<<0)|(1<<1)|(1<<2);
+		DDRE |= (1<<6);
 }
 
 
@@ -195,11 +198,12 @@ int side_markercheck(void){
 void run_PID (){
         long int error; int prev_error =0; long int Kd_factor;
 
-        long int LED1 = adc_read7();int LED2 = adc_read6();int LED3 = adc_read4();int LED4 = adc_read3();
-        int Sum_LED = LED1+LED2+LED3+LED4;
+        long int LED1 = adc_read7();//Why is LED7 a long intand everything else is an int ?
+				int LED2 = adc_read6();int LED3 = adc_read4();int LED4 = adc_read3();
+        int sum_LED = LED1+LED2+LED3+LED4;
         long int weighted_error = ((LED1)+(LED2*2)+(LED3*3)+(LED4*4))*1000;
 
-        error = (weighted_error/Sum_LED)-2500;
+        error = (weighted_error/sum_LED)-2500;
         Kd_factor = ((Kd *(error - prev_error)/10)); //This calculates the derivative side of the PD
         PID = ((error*gain)+Kd_factor)/1000; // Calculates the PID value.
         if(PID>speed){
@@ -212,6 +216,7 @@ void run_PID (){
             OCR1A =(speed+PID); //this drives motor 1 or the right wheel
         prev_error = error; //Stores the last error value
         _delay_ms(10); //Delay for the derivative function
+				indicate_position(error);
 }
 
 void check_position(){
@@ -222,6 +227,19 @@ void check_position(){
     }
 }
 
+void indicate_position(long int error){
+	if(error<=-2){PORTE |=(1<<6);
+	elseif(error>=-2 & error<=0){PORTB |=(1<<0);
+	elseif(error>=0 & error<=2){PORTB |=(1<<0);
+	elseif(error>=2){PORTB |=(1<<0);
+	else{PORTB |= (1<<0)|(1<<1)|(1<<2);
+			 PORTE |= (1<<6);
+		 }
+
+
+	}
+}
+
 
 void main(){
     setup();
@@ -230,5 +248,7 @@ void main(){
     while(1){
         check_position();
         run_PID();
+
+        //corner_count += side_markercheck();
         }
 }
