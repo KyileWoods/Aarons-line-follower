@@ -115,16 +115,11 @@ void side_markercheck(void){
         PORTB = (PORTB & 0b11111101);
     }
 }
-volatile int Timer = 0;
-
- ISR(TIMER_OVF_vect){
-     Timer ++; 
- }
 
 
 void run_PID (){
-        int gain = 25;  // this equals a gain of 0.5 all gains need to be multiplied by 1000
-        int Kd = 2; // This equals a Kp value of 0.5 same as above //
+        int gain = 30;  // this equals a gain of 0.5 all gains need to be multiplied by 1000
+        int Kd = 3; // This equals a Kp value of 0.5 same as above //
         long int error; int prev_error =0; long int PID;long int Kd_factor;
         int speed = 21;
         long int LED1 = adc_read1();int LED2 = adc_read2();int LED3 = adc_read3();int LED4 = adc_read4();
@@ -135,10 +130,10 @@ void run_PID (){
         Kd_factor = ((Kd *(error - prev_error)/100)); //This calculates the derivative side of the PD
         PID = ((error*gain)+Kd_factor)/1000; // Calculates the PID value.
         if(PID>speed){
-            PID =speed;
+            PID =speed-3;
         }
         if(PID<-speed){
-            PID = -speed;
+            PID = -speed+3;
         }
             OCR0A = (speed+(-PID)); //this drives motor 2 or the left wheel
             OCR1A = (speed+PID); //this drives motor 1 or the right wheel
@@ -152,20 +147,17 @@ void finish_detect(void){
         //side_markeron = 1; //If it is set marker on to 1
         PORTB |=(1<<2);
         int Timer1 = 0;
-        while(Timer1<=100){
+        while(Timer1<=80){
             run_PID();
             Timer1++;
             _delay_ms(10);
         }
-        while(Timer<=310){
             OCR0A = 0;
             OCR1A = 0;
-            Timer++;
-            _delay_ms(10);
+            _delay_ms(2000);
+            PORTB = (PORTB & 0b11111011);
         }
 }
-        PORTB = (PORTB & 0b11111011);
-    }
 
 
 
@@ -186,6 +178,6 @@ void main(){
         //check_position();
         run_PID();
         side_markercheck();
-        //finish_detect();
+        finish_detect();
         }
 }
