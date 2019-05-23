@@ -175,10 +175,10 @@ void setup() {
 
 
 
-int corner_2(int LED_2, int LED_3) {
+int cautious_turning(int LED_2, int LED_3) {
     long int diff; int speed;
     diff = (LED_3 * 1000) / LED_2;
-    if (diff<2050 && diff>-50) {
+    if (diff<2050 && diff>-50) { //??? How would a negative value come about? Perhaps not important, but I don't think 'diff>= -50' will ever be false.
         speed = 35;
         PORTB |= (1 << 1);
     }
@@ -192,24 +192,41 @@ int corner_2(int LED_2, int LED_3) {
     return speed;
 }
 
-long int run_PID(int prev_error) {
-    int gain = 30;  // this equals a gain of 0.5 all gains need to be multiplied by 1000
+long int run_PID(int prev_error, long int integral) {
+    int Kp = 30;  // this equals a gain of 0.5 all gains need to be multiplied by 1000
     int Kd = 5; // This equals a Kp value of 0.5 same as above //
-    long int error; int PID; long int Kd_factor;
-    int speed;
-    long int LED1 = adc_read1(); int LED2 = adc_read2(); int LED3 = adc_read3(); int LED4 = adc_read4();
+    int Ki = 10
+    long int error; int PID; long int kd_factor; int ki_factor; int kp_factor
+    
+    //Find the error
+    long int LED1 = adc_read1(); int LED2 = adc_read2(); int LED3 = adc_read3(); int LED4 = adc_read4(); 
     int Sum_LED = LED1 + LED2 + LED3 + LED4;
     long int weighted_error = ((LED1)+(LED2 * 2) + (LED3 * 3) + (LED4 * 4)) * 1000;
     error = (weighted_error / Sum_LED) - 2500;
-    Kd_factor = (Kd *((error)-(prev_error) / 100)); //This calculates the derivative side of the PD
-    PID = ((error*gain) + Kd_factor) / 1000; // Calculates the PID value.
-    speed = corner_2(LED2, LED3);
+
+    kp_factor
+
+    if(integral<0 && (integral+error)>0){
+        integral = 0;
+    }
+    elseif(integral>0 && (integral+error)<0)
+    
+    integral = integral + error;
+    ki_factor = integral/ki_factor;
+
+    kd_factor = (Kd *((error)-(prev_error) / 100)); //This calculates the derivative side of the PD
+    
+    PID = (kp_factor + kd_factor + ki_factor) / 1000; // Calculates the PID value.
+    
+    // Check if the robot may be a little too far out of alignment. Helps to slow down and drive carefully.
+    int speed = cautious_turning(LED2, LED3);
     if (PID > speed) {
         PID = speed;
     }
     if (PID < -speed) {
         PID = -speed;
     }
+
     OCR0A = (speed + (-PID)); //this drives motor 2 or the left wheel
     OCR1A = (speed + PID); //this drives motor 1 or the right wheel
     _delay_ms(5); //Delay for the derivative function
